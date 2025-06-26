@@ -32,14 +32,29 @@ class FormFinder:
         ]
 
     def _find_templates_with_fields(self, fields: List[str]) -> List[Dict]:
-        """Find templates containing all specified fields"""
         Form = Query()
         query = None
-
+        # Строим запрос для проверки существования всех полей
         for field in fields:
-            query = Form[field].exists() if query is None else query & Form[field].exists()
+            if query is None:
+                query = Form[field].exists()
+            else:
+                query &= Form[field].exists()
 
-        return self.db.search(query)
+        # Ищем документы, содержащие все указанные поля
+        documents = self.db.search(query)
+
+        # Фильтруем документы, где количество полей точно совпадает
+        # (исключая поле 'name')
+        result = []
+        for doc in documents:
+            # Получаем только пользовательские поля (исключая 'name')
+            doc_fields = {k: v for k, v in doc.items() if k != 'name'}
+            if len(doc_fields) == len(fields):
+                result.append(doc)
+
+        return result
+
 
     def _validate_template(self, template: Dict[str, str], fields: Dict[str, str]) -> bool:
         """Validate if template matches the field types"""
@@ -200,8 +215,8 @@ class CommandParser:
         return features
 
 
-def main(args: list[str]):
-    try:
+def start(args: list[str]):
+
         fields = CommandParser.parse(args)
         form_finder = FormFinder()
 
@@ -212,10 +227,9 @@ def main(args: list[str]):
         else:
             print("No matching templates found")
 
+if __name__ == '__main__':
+    try:
+        start(sys.argv[1:])
     except ValueError as e:
         print(f"Error: {e}")
         sys.exit(1)
-
-
-if __name__ == '__main__':
-    main(sys.argv[1:])
