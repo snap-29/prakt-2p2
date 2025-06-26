@@ -1,5 +1,5 @@
 import unittest
-from src.app import FormFinder
+from app import FormFinder
 
 class TestFindFromDb(unittest.TestCase):
     def test_find_form_by_fields(self):

@@ -74,15 +74,12 @@ class EmailValidator:
     )
 
     @classmethod
-    def validate(cls, email: str) -> bool:
+    def validate(cls, email) -> bool:
         """Validate email format and domain"""
         if not email or not isinstance(email, str):
             return False
 
         if not cls.EMAIL_PATTERN.match(email):
-            return False
-
-        if '@' not in email:
             return False
 
         username, domain = email.split('@', 1)
@@ -121,7 +118,7 @@ class DateValidator:
     @classmethod
     def validate(cls, date_str: str) -> bool:
         """Validate date format"""
-        if not isinstance(date_str, str):
+        if not date_str or not isinstance(date_str, str):
             return False
 
         for pattern, date_format in cls.DATE_FORMATS:
@@ -138,15 +135,11 @@ class DomainValidator:
     """Domain validation utilities"""
 
     @classmethod
-    def validate(cls, domain: str) -> Tuple[bool, Optional[str]]:
+    def validate(cls, domain) -> Tuple[bool, Optional[str]]:
         """Validate domain name format"""
-        domain = domain.strip().lower()
-        domain = re.sub(r'^https?://', '', domain)
-        domain = re.sub(r'^ftp://', '', domain)
-        domain = re.sub(r'/.*$', '', domain)
-
         if not domain:
             return False, "Domain cannot be empty"
+        domain = domain.strip().lower()
 
         if len(domain) > 253:
             return False, "Domain exceeds maximum length (253 chars)"
@@ -207,9 +200,9 @@ class CommandParser:
         return features
 
 
-def main():
+def main(args: list[str]):
     try:
-        fields = CommandParser.parse(sys.argv[1:])
+        fields = CommandParser.parse(args)
         form_finder = FormFinder()
 
         matching_templates = form_finder.find_matching_templates(fields)
@@ -225,4 +218,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])

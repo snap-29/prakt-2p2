@@ -1,5 +1,5 @@
 import unittest
-from src.app import EmailValidator
+from app import EmailValidator
 
 class TestEmailValidator(unittest.TestCase):
     def setUp(self):
@@ -45,6 +45,7 @@ class TestEmailValidator(unittest.TestCase):
             "username@example.c",
             "username@.org",
             "username@111.222.333.44444",
+            "username@111.222.333.444",
             "",
             None,
             "username@example..com",

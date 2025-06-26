@@ -1,5 +1,5 @@
 import unittest
-from src.app import PhoneValidator
+from app import PhoneValidator
 
 class TestPhoneValidator(unittest.TestCase):
 
