@@ -3,15 +3,31 @@ import socket
 import argparse
 from tinydb import TinyDB, Query
 from typing import Dict, Optional
+from datetime import datetime
+from typing import Union, Optional
 
 
+import re
 
-def is_date(value: str) -> bool:
-    date_patterns = [
-        r'^\d{2}\.\d{2}\.\d{4}$',
-        r'^\d{4}-\d{2}-\d{2}$'
-    ]
-    return any(re.fullmatch(pattern, value) for pattern in date_patterns)
+
+def is_date(date_str: str) -> Union[bool, str]:
+
+    if match := re.fullmatch(r'^(\d{2})\.(\d{2})\.(\d{4})$', date_str):
+        day, month, year = match.groups()
+        sep = '.'
+    elif match := re.fullmatch(r'^(\d{4})-(\d{2})-(\d{2})$', date_str):
+        year, month, day = match.groups()
+        sep = '-'
+    else:
+        return False
+
+    try:
+        date_obj = datetime.strptime(f"{year}{sep}{month}{sep}{day}", f"%Y{sep}%m{sep}%d")
+        return date_obj.strftime("%Y-%m-%d")
+    except ValueError:
+        return False
+
+
 
 def is_phone(value: str) -> bool:
     if not isinstance(value, str):
@@ -23,27 +39,18 @@ import re
 from typing import Optional
 
 def validate_domain(domain: str) -> tuple[bool, Optional[str]]:
-    """
-    Валидация доменного имени с проверкой:
-    - Соответствие RFC стандартам
-    - Длина и структура
-    - Запрещённые символы и позиции дефисов
 
-    Возвращает (is_valid: bool, error_message: Optional[str])
-    """
     domain = domain.strip().lower()
     domain = re.sub(r'^https?://', '', domain)
     domain = re.sub(r'^ftp://', '', domain)
     domain = re.sub(r'/.*$', '', domain)        # Удаляем путь после /
 
-    # Основные проверки
     if not domain:
         return False, "Домен не может быть пустым"
 
     if len(domain) > 253:
         return False, "Длина домена превышает 253 символа"
 
-    # Проверка каждого поддомена (между точками)
     subdomains = domain.split('.')
     if len(subdomains) < 2:
         return False, "Должен быть хотя бы один поддомен и TLD"
@@ -55,7 +62,6 @@ def validate_domain(domain: str) -> tuple[bool, Optional[str]]:
         if len(part) > 63:
             return False, f"Поддомен '{part}' превышает 63 символа"
 
-        # Проверка символов
         if not re.match(r'^[a-z0-9-]+$', part):
             return False, f"Поддомен '{part}' содержит недопустимые символы"
 
@@ -76,21 +82,18 @@ def validate_domain(domain: str) -> tuple[bool, Optional[str]]:
 
 
 def is_email(email):
-    """Проверяет валидность email, включая адреса с IP"""
     if not email or not isinstance(email, str):
         return False
 
-    # Основной паттерн для стандартных email
     email_pattern = re.compile(
-        r'^[a-zA-Z0-9._%+-]+@'          # Локальная часть
-        r'([a-zA-Z0-9.-]+\.[a-zA-Z]{2,}' # Домен
-        r'|(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}))$'  # ИЛИ IPv4
+        r'^[a-zA-Z0-9._%+-]+@'
+        r'([a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+        r'|(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}))$'
     )
 
     if not email_pattern.match(email):
         return False
 
-    # Если это email с IP-адресом
     if '@' in email:
         username = email.split('@')[0]
         if username.startswith('.') :
