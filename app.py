@@ -5,12 +5,25 @@ from tinydb import TinyDB, Query
 from typing import Dict, Optional
 from datetime import datetime
 from typing import Union, Optional
+from enum import Enum, auto
+
+class FieldType(Enum):
+    TEXT = "text"
+    EMAIL = "email"
+    PHONE = "phone"
+    DATE = "date"
+
+def validate_type(vallue_type: FieldType, value) -> bool:
+    if vallue_type == FieldType.EMAIL:
+        return is_email(value)
+    elif vallue_type == FieldType.PHONE:
+        return is_phone(value)
+    elif vallue_type == FieldType.DATE:
+        return is_date(value)
+    return isinstance(value, str)
 
 
-import re
-
-
-def is_date(date_str: str) -> Union[bool, str]:
+def is_date(date_str: str) -> bool:
 
     if match := re.fullmatch(r'^(\d{2})\.(\d{2})\.(\d{4})$', date_str):
         day, month, year = match.groups()
@@ -22,8 +35,8 @@ def is_date(date_str: str) -> Union[bool, str]:
         return False
 
     try:
-        date_obj = datetime.strptime(f"{year}{sep}{month}{sep}{day}", f"%Y{sep}%m{sep}%d")
-        return date_obj.strftime("%Y-%m-%d")
+        datetime.strptime(f"{year}{sep}{month}{sep}{day}", f"%Y{sep}%m{sep}%d")
+        return True
     except ValueError:
         return False
 
