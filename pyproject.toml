@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=42"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "prakt-2p2"
+version = "0.1.0"
+authors = [
+    {name = "George Sagomonov", email = "george.sagomonov@gmail.com"},
+]
+description = "Form validation and template matching system"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "tinydb>=4.7",
+    "python-dateutil>=2.8",  # For date validation
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "coverage>=7.0",
+    "hypothesis>=6.0",  # For property-based testing
+]
+dev = [
+    "mutmut>=2.0",  # For mutation testing
+    "black>=22.0",  # Code formatting
+    "flake8>=5.0",  # Linting
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+addopts = "-v --cov=src --cov-report=term-missing"
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "src/__init__.py",
+    "src/tests/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "pass",
+    "raise ImportError",
+]
+
+[tool.coverage.paths]
+source = ["src"]
