@@ -1,6 +1,5 @@
 import unittest
-from tinydb import TinyDB, Query
-from app import FormFinder
+from src.app import FormFinder
 
 class TestFindFromDb(unittest.TestCase):
     def test_find_form_by_fields(self):

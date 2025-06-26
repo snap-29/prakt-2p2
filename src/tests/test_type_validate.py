@@ -1,5 +1,5 @@
 import unittest
-from app import FormFinder, FieldType
+from src.app import FormFinder, FieldType
 
 
 class MyTestCase(unittest.TestCase):

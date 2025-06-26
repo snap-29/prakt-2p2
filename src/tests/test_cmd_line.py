@@ -1,5 +1,5 @@
 import unittest
-from app import CommandParser
+from src.app import CommandParser
 
 class TestCommandLineArgs(unittest.TestCase):
     def test_command_line_args(self):

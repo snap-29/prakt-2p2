@@ -1,6 +1,6 @@
 import unittest
 
-from app import DateValidator
+from src.app import DateValidator
 
 
 class TestDateValidator(unittest.TestCase):

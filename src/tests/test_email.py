@@ -1,5 +1,5 @@
 import unittest
-from app import EmailValidator
+from src.app import EmailValidator
 
 class TestEmailValidator(unittest.TestCase):
     def setUp(self):
