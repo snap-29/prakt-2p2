@@ -5,13 +5,58 @@ from tinydb import TinyDB, Query
 from typing import Dict, Optional
 from datetime import datetime
 from typing import Union, Optional
-from enum import Enum, auto
+from typing import Dict, Optional, List
+import argparse
+from enum import Enum
 
 class FieldType(Enum):
+    """Типы данных для валидации параметров"""
     TEXT = "text"
     EMAIL = "email"
     PHONE = "phone"
     DATE = "date"
+
+class Command:
+    def __init__(self, name: str, params: Optional[Dict[str, str]] = None):
+        """
+        :param name: Название команды
+        :param params: Параметры в формате {ключ: значение}
+        """
+        self.name = name
+        self.features = params or {}
+
+    def add_feature(self, key: str, value: str):
+        """Добавить параметр"""
+        self.features[key] = value
+
+    def get_feature(self, key: str) -> Optional[str]:
+        """Получить значение параметра"""
+        return self.features.get(key)
+
+    @classmethod
+    def from_command_line(cls, args: List[str]):
+        """
+        Создает команду из аргументов командной строки
+        Формат: command_name --key1=value1 --key2=value2
+        """
+        parser = argparse.ArgumentParser()
+        parser.add_argument("command_name")
+        args, unknown = parser.parse_known_args(args)
+
+        features = {}
+        for arg in unknown:
+            if arg.startswith("--"):
+                key_value = arg[2:].split("=", 1)
+                if len(key_value) == 2 and key_value[0].startswith("f_"):
+                    features[key_value[0][2:]] = key_value[1]
+
+        return cls(args.command_name, features)
+
+    def __str__(self):
+        features_str = " ".join(f"--{k}={v}" for k, v in self.features.items())
+        return f"{self.name} {features_str}".strip()
+
+
 
 def validate_type(vallue_type: FieldType, value) -> bool:
     if vallue_type == FieldType.EMAIL:
