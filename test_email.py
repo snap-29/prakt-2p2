@@ -1,7 +1,12 @@
 import unittest
-from app import is_email
+from app import EmailValidator
 
 class TestEmailValidator(unittest.TestCase):
+    def setUp(self):
+        self.email_validator = EmailValidator()
+
+    def is_email(self, email):
+        return self.email_validator.validate(email)
 
     def test_valid_emails(self):
         valid_emails = [
@@ -22,7 +27,7 @@ class TestEmailValidator(unittest.TestCase):
         for email in valid_emails:
             with self.subTest(email=email):
                 self.assertEqual(
-                    is_email(email),
+                    self.is_email(email),
                     True,
                     f"Valid email {email or 'None'} was not recognized"
                 )
@@ -51,7 +56,7 @@ class TestEmailValidator(unittest.TestCase):
         for email in invalid_emails:
             with self.subTest(email=email):
                 self.assertEqual(
-                    is_email(email),
+                    self.is_email(email),
                     False,
                     f"Invalid email {email or 'None'} was recognized as valid"
                 )

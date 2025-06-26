@@ -1,8 +1,13 @@
 import unittest
-from app import is_phone
+from app import PhoneValidator
 
 class TestPhoneValidator(unittest.TestCase):
 
+    def setUp(self):
+        self.phone_validator = PhoneValidator()
+
+    def is_phone(self, number):
+        return self.phone_validator.validate(number)
 
     def test_valid_phone_numbers(self):
         valid_numbers = [
@@ -15,7 +20,7 @@ class TestPhoneValidator(unittest.TestCase):
         for number in valid_numbers:
             with self.subTest(number=number):
                 self.assertEqual(
-                    is_phone(number),
+                    self.is_phone(number),
                     True,
                     f"Valid phone number {number} was not recognized"
                 )
@@ -41,7 +46,7 @@ class TestPhoneValidator(unittest.TestCase):
         for number in invalid_numbers:
             with self.subTest(number=number):
                 self.assertNotEqual(
-                    is_phone(number),
+                    self.is_phone(number),
                     True,
                     f"Invalid phone number {number} was recognized as valid"
                 )
