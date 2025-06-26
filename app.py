@@ -1,13 +1,12 @@
-import re
+import argparse
 import socket
-import argparse
-from tinydb import TinyDB, Query
-from typing import Dict, Optional
+import sys
 from datetime import datetime
-from typing import Union, Optional
-from typing import Dict, Optional, List
-import argparse
 from enum import Enum
+from typing import Dict, Optional, List
+
+from tinydb import TinyDB, Query
+
 
 class FieldType(Enum):
     """Типы данных для валидации параметров"""
@@ -15,6 +14,7 @@ class FieldType(Enum):
     EMAIL = "email"
     PHONE = "phone"
     DATE = "date"
+
 
 class Command:
     def __init__(self, name: str, params: Optional[Dict[str, str]] = None):
@@ -57,7 +57,6 @@ class Command:
         return f"{self.name} {features_str}".strip()
 
 
-
 def validate_type(vallue_type: FieldType, value) -> bool:
     if vallue_type == FieldType.EMAIL:
         return is_email(value)
@@ -69,7 +68,6 @@ def validate_type(vallue_type: FieldType, value) -> bool:
 
 
 def is_date(date_str: str) -> bool:
-
     if match := re.fullmatch(r'^(\d{2})\.(\d{2})\.(\d{4})$', date_str):
         day, month, year = match.groups()
         sep = '.'
@@ -86,22 +84,22 @@ def is_date(date_str: str) -> bool:
         return False
 
 
-
 def is_phone(value: str) -> bool:
     if not isinstance(value, str):
-       return False
+        return False
     phone_pattern = r'^\+7 \d{3} \d{3} \d{2} \d{2}$'
     return re.fullmatch(phone_pattern, value) is not None
+
 
 import re
 from typing import Optional
 
-def validate_domain(domain: str) -> tuple[bool, Optional[str]]:
 
+def validate_domain(domain: str) -> tuple[bool, Optional[str]]:
     domain = domain.strip().lower()
     domain = re.sub(r'^https?://', '', domain)
     domain = re.sub(r'^ftp://', '', domain)
-    domain = re.sub(r'/.*$', '', domain)        # Удаляем путь после /
+    domain = re.sub(r'/.*$', '', domain)  # Удаляем путь после /
 
     if not domain:
         return False, "Домен не может быть пустым"
@@ -154,7 +152,7 @@ def is_email(email):
 
     if '@' in email:
         username = email.split('@')[0]
-        if username.startswith('.') :
+        if username.startswith('.'):
             return False
         domain = email.split('@')[1]
         if domain.replace('.', '').isdigit():
@@ -169,69 +167,66 @@ def is_email(email):
     return True
 
 
-def determine_field_type(value: str) -> str:
-    if is_date(value):
-        return "date"
-    if is_phone(value):
-        return "phone"
-    if is_email(value):
-        return "email"
-    return "text"
+def find_form_by_fields(fields: List[str], db: TinyDB) -> List[Dict]:
+    """
+    Находит формы, содержащие все указанные поля.
 
-def find_matching_template(input_fields: Dict[str, str], db: TinyDB) -> Optional[Dict]:
+    Args:
+        fields: Список имен полей для поиска
+        db: Экземпляр TinyDB для поиска
+
+    Returns:
+        Список словарей с найденными формами
+    """
     Form = Query()
+    query = None
 
-    for template in db.all():
-        template_fields = {k: v for k, v in template.items() if k != "name"}
-        match = True
+    # Строим запрос для проверки существования всех полей
+    for field in fields:
+        if query is None:
+            query = Form[field].exists()
+        else:
+            query &= Form[field].exists()
 
-        for field_name, field_type in template_fields.items():
-            if field_name not in input_fields:
-                match = False
-                break
-            if input_fields[field_name] != field_type:
-                match = False
-                break
+    # Ищем документы, содержащие все указанные поля
+    documents = db.search(query)
 
-        if match:
-            return template
+    # Фильтруем документы, где количество полей точно совпадает
+    # (исключая поле 'name')
+    result = []
+    for doc in documents:
+        # Получаем только пользовательские поля (исключая 'name')
+        doc_fields = {k: v for k, v in doc.items() if k != 'name'}
+        if len(doc_fields) == len(fields):
+            result.append(doc)
 
-    return None
+    return result
+
+
+def is_matching_template(form: Dict[str, str], fields: Dict[str, str]) -> bool:
+    form_fields = {k: v for k, v in form.items() if k != 'name'}
+    for field in form_fields:
+        ft = FieldType(form_fields.get(field))
+        if not validate_type(ft, fields[field]):
+            return False
+    return True
+
 
 def main():
-    parser = argparse.ArgumentParser(description='Сопоставитель шаблонов форм')
-    parser.add_argument('command', type=str, help='Команда для выполнения (get_tpl)')
-    parser.add_argument('fields', nargs='*', help='Входные поля в формате --имя=значение')
-
-    args = parser.parse_args()
-
-    if args.command != 'get_tpl':
-        print("Неизвестная команда")
+    args = sys.argv
+    command = Command.from_command_line(args[1:])
+    if command.name != "get_tpl":
+        print(f"Неверная команда {command.name}")
         return
+    if command.features.items().__len__() == 0:
+        print("Отсутствуют поля")
 
-    input_fields = {}
-    field_types = {}
+    db = TinyDB('forms_db.json', ensure_ascii=False, encoding='utf-8')
+    r = find_form_by_fields(list(command.features.keys()), db)
+    for doc in r:
+        if (is_matching_template(doc, command.features)):
+            print(doc['name'])
 
-    for field in args.fields:
-        if field.startswith('--'):
-            field = field[2:]
-            if '=' in field:
-                name, value = field.split('=', 1)
-                field_type = determine_field_type(value)
-                input_fields[name] = field_type
-                field_types[name] = field_type
-
-    db = TinyDB('forms_db.json')
-
-    template = find_matching_template(input_fields, db)
-
-    if template:
-        print(template['name'])
-    else:
-        print('{')
-        for i, (name, type_) in enumerate(field_types.items()):
-            print(f'  {name}: {type_}' + (',' if i < len(field_types) - 1 else ''))
-        print('}')
 
 if __name__ == '__main__':
     main()

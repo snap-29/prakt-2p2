@@ -3,4 +3,5 @@ name = "prakt-2p2"
 version = "0.1.0"
 dependencies = [
     "tinydb>=4.8.2"
+
 ]
